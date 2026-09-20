@@ -1,7 +1,7 @@
 import numpy as np
 
 from .explainable import Explainable
-from .activations import Sigmoid
+from .activations import Sigmoid, ReLU
 from .costs import BinaryCrossEntropy
 
 # Diagnostics
@@ -44,29 +44,36 @@ class NeuralNetworkBinary:
         raise ValueError(f"every layer size in n must be a positive integer, got {size!r} in n={n!r}")
     if n[-1] != 1:
       raise ValueError(
-          f"n[-1] (output layer size) must be 1 — got {n[-1]} in n={n!r}. "
+          f"n[-1] (output layer size) must be 1 - got {n[-1]} in n={n!r}. "
           f"NeuralNetworkBinary only supports single-output binary classification "
           f"(BinaryCrossEntropy's cost normalization assumes it)."
       )
 
-    self.n = n  # Layer size list, e.g. [2, 20, 20, 1]
-    self.L = len(n) - 1  # Number of layers (excluding input layer)
-    self.hidden_activation = hidden_activation  # used for layers 1..L-1
-    self.output_activation = output_activation  # used for layer L
+    self.n = n # Layer size list, e.g. [2, 20, 20, 1]
+    self.L = len(n) - 1 # Number of layers (excluding input layer)
+    self.hidden_activation = hidden_activation # Used for layers 1 ... L-1
+    self.output_activation = output_activation # Used for layer L
     self.cost_fn = cost_fn
-    self.params = {}  # Dictionary to hold W1..WL and b1..bL
+    self.params = {} # Dictionary to hold W1 ... WL and b1 ... bL
 
-    for l in range(1, self.L + 1):  # l in ranges 1 to (and including) L
-      self.params[f"W{l}"] = np.random.randn(n[l], n[l - 1])  # Weight matrix follows n^[l] x n^[l-1]
-      self.params[f"b{l}"] = np.random.randn(n[l], 1)  # Bias matrix follows n^[l] x 1
+    for l in range(1, self.L + 1): # l in ranges 1 to (and including) L
+
+      # Weights start random but scaled by number of inputs feeding the layer (avoiding NaN values)
+      activation = self.output_activation if l == self.L else self.hidden_activation
+      gain = 2 if activation is ReLU else 1
+      scale = np.sqrt(gain / n[l - 1])
+
+      self.params[f"W{l}"] = np.random.randn(n[l], n[l - 1]) * scale # Weight matrix follows n^[l] x n^[l-1]
+
+      self.params[f"b{l}"] = np.zeros((n[l], 1)) # Bias matrix follows n^[l] x 1 (start at zero)
 
   def summary(self):
-    # Prints per-layer shapes, activation, and param count -- quick sanity check before training
+    # Prints per-layer shapes, activation, and param count
     col = "{:<10}{:<14}{:<12}{:<12}{:<10}"
     width = 58
 
     print("=" * width)
-    print(f"NeuralNetworkBinary — {self.L} layer{'s' if self.L != 1 else ''}, input size {self.n[0]}")
+    print(f"NeuralNetworkBinary - {self.L} layer{'s' if self.L != 1 else ''}, input size {self.n[0]}")
     print("=" * width)
     print(col.format("Layer", "W shape", "b shape", "Activation", "Params"))
     print("-" * width)
@@ -86,15 +93,15 @@ class NeuralNetworkBinary:
     print(f"Total params:  {total_params}")
     print("=" * width)
 
-  def cost(self, y_hat, y):  # Both y_hat and y should be a n^L x m matrix
+  def cost(self, y_hat, y): # Both y_hat and y should be a n^L x m matrix
     return self.cost_fn.forward(y_hat, y)
 
   @staticmethod
   def train_test_split(X, y, test_size=0.2, seed=None):
     # Shuffles X, y together then splits off test_size fraction as a held-out test set
-    rng = np.random.default_rng(seed)  # rng = random number generator, seeded for reproducibility
-    indices = rng.permutation(len(X))  # Shuffled index order
-    split = int(len(X) * (1 - test_size))  # Index where the train/test split happens
+    rng = np.random.default_rng(seed) # rng = random number generator, seeded for reproducibility
+    indices = rng.permutation(len(X)) # Shuffled index order
+    split = int(len(X) * (1 - test_size)) # Index where the train/test split happens
     train_idx, test_idx = indices[:split], indices[split:]
     return X[train_idx], X[test_idx], y[train_idx], y[test_idx]
 
@@ -102,23 +109,21 @@ class NeuralNetworkBinary:
     # X: Matrix of raw samples
     # y: Array of training labels
 
-    # Stored so predict() can standardize new data the same way later,
-    # instead of recomputing mean/std from whatever it's given — see
-    # predict()'s docstring for why that distinction matters.
+    # Stored so predict() can standardize new data instead of recomputing mean/std
     self.X_mean = X.mean(axis=0)
     self.X_std = X.std(axis=0)
-    zero_std = self.X_std == 0  # constant column (or only 1 training sample) -- std is 0
+    zero_std = self.X_std == 0 # Constant column (or only 1 training sample) - std is 0
     if np.any(zero_std):
       cols = np.where(zero_std)[0].tolist()
       print(f"prepare_data(): column(s) {cols} have zero variance (constant "
-            f"value, or only 1 training sample) — standardizing to 0 instead "
+            f"value, or only 1 training sample) - standardizing to 0 instead "
             f"of dividing by zero.")
-    self.X_std = np.where(zero_std, 1, self.X_std)  # avoid divide-by-zero; numerator is already 0 there
-    X = (X - self.X_mean) / self.X_std  # Standardising (Z-score normalisation) each feature (column) to mean 0, std 1
+    self.X_std = np.where(zero_std, 1, self.X_std) # Avoid dividing by zero
+    X = (X - self.X_mean) / self.X_std # Z-score normalisation
 
-    m = X.shape[0]  # Number of training samples
-    A0 = X.T  # Transposes the matrix, obtaining A^[0] in shape n^[0] x m
-    Y = y.reshape(self.n[-1], m)  # Reshaping training labels to fit output layer
+    m = X.shape[0] # Number of training samples
+    A0 = X.T # Transposes the matrix, obtaining A^[0] in shape n^[0] x m
+    Y = y.reshape(self.n[-1], m) # Reshaping training labels to fit output layer
 
     return A0, Y, m
 
@@ -130,11 +135,11 @@ class NeuralNetworkBinary:
     if X.shape[1] != self.X_mean.shape[0]:
       raise ValueError(
           f"predict() got {X.shape[1]} feature column(s), but prepare_data() "
-          f"was trained on {self.X_mean.shape[0]} — X must have the same "
+          f"was trained on {self.X_mean.shape[0]} - X must have the same "
           f"features (same columns, same order) as the training data."
       )
 
-    X_std = (X - self.X_mean) / self.X_std  # Standardise new data the same way as training data
+    X_std = (X - self.X_mean) / self.X_std # Standardise new data the same way as training data
     A0 = X_std.T
     y_hat, _ = self.feed_forward(A0)
 
@@ -143,15 +148,13 @@ class NeuralNetworkBinary:
     return (y_hat >= threshold).astype(int)
 
   def predict_grid(self, xs, ys):
-    # Like predict(), but evaluates every point of a coordinate grid instead of a list of samples -- for plotting a 2D decision boundary
-    # xs/ys are raw-space coordinates (same units as X); standardized internally the same way predict() does
-    # Returns predictions reshaped to (len(ys), len(xs)), ready for matplotlib's imshow/contour
+    # Evaluates every point of a coordinate grid instead of a list of samples - for plotting a 2D decision boundary
     if not hasattr(self, "X_mean"):
       raise RuntimeError("predict_grid() needs prepare_data() to have been called on training data first")
     if self.X_mean.shape[0] != 2:
       raise ValueError(
           f"predict_grid() only works for a network trained on exactly 2 "
-          f"features (it evaluates a 2D grid) — this network was trained "
+          f"features (it evaluates a 2D grid) - this network was trained "
           f"on {self.X_mean.shape[0]}."
       )
 
@@ -162,33 +165,33 @@ class NeuralNetworkBinary:
     return y_hat[0].reshape(XX.shape)
 
   def feed_forward(self, A0):
-    cache = {"A0": A0}  # Creates a cache dictionary with A0 first entry
-    A = A0  # Initialise value A (firstly as A0)
+    cache = {"A0": A0} # Creates a cache dictionary with A0 first entry
+    A = A0 # Initialise value A (firstly as A0)
 
-    for l in range(1, self.L + 1):  # l in range 1 to (and including) L
-      W = self.params[f"W{l}"]  # Grabs weights for layer l
-      b = self.params[f"b{l}"]  # Grabs biases for layer l
-      Z = W @ A + b  # Matrix multiplication and addition to find pre-activation value
+    for l in range(1, self.L + 1): # l in range 1 to (and including) L
+      W = self.params[f"W{l}"] # Grabs weights for layer l
+      b = self.params[f"b{l}"] # Grabs biases for layer l
+      Z = W @ A + b # Matrix multiplication and addition to find pre-activation value
       activation = self.output_activation if l == self.L else self.hidden_activation
-      A = activation.forward(Z)  # Find post-activation value
-      cache[f"A{l}"] = A  # Add to the cache dictionary
+      A = activation.forward(Z) # Find post-activation value
+      cache[f"A{l}"] = A # Add to the cache dictionary
 
     y_hat = A
 
     return y_hat, cache
 
-  def backprop_layer(self, l, cache, m, Y, propagator_dC_dA):  # l is what layer gradients are being computed
-    A_l = cache[f"A{l}"]  # Extracting A value of this layer
-    A_prev = cache[f"A{l - 1}"]  # Extracting A value of previous layer
-    W_l = self.params[f"W{l}"]  # Extracting weights of this layer
+  def backprop_layer(self, l, cache, m, Y, propagator_dC_dA): # l is what layer gradients are being computed
+    A_l = cache[f"A{l}"] # Extracting A value of this layer
+    A_prev = cache[f"A{l - 1}"] # Extracting A value of previous layer
+    W_l = self.params[f"W{l}"] # Extracting weights of this layer
 
-    if l == self.L:  # Output layer: chain rule through the cost fn, then the output activation
+    if l == self.L: # Output layer: chain rule through the cost fn, then the output activation
       dC_dA = self.cost_fn.backward(A_l, Y, m)
       dA_dZ = self.output_activation.backward(A_l)
       dC_dZ = dC_dA * dA_dZ
-    else:  # Every other layer
+    else: # Every other layer
       dA_dZ = self.hidden_activation.backward(A_l)
-      dC_dZ = propagator_dC_dA * dA_dZ  # Calculates dC/dZ from propogator handed down
+      dC_dZ = propagator_dC_dA * dA_dZ # Calculates dC/dZ from propogator handed down
     assert dC_dZ.shape == (self.n[l], m)
 
     dC_dW = dC_dZ @ A_prev.T
@@ -197,43 +200,43 @@ class NeuralNetworkBinary:
     dC_db = np.sum(dC_dZ, axis=1, keepdims=True)
     assert dC_db.shape == (self.n[l], 1)
 
-    dC_dA_prev = W_l.T @ dC_dZ  # Propagator for the layer below
+    dC_dA_prev = W_l.T @ dC_dZ # Propagator for the layer below
     assert dC_dA_prev.shape == (self.n[l - 1], m)
 
     return dC_dW, dC_db, dC_dA_prev
 
   def train(self, A0, Y, m, epochs=1000, alpha=0.01):
-    costs = []  # Create an empty list for costs (to be appended later)
+    costs = [] # Create an empty list for costs (to be appended later)
 
-    for e in range(epochs):  # Going through loop for each epoch
+    for e in range(epochs): # Going through loop for each epoch
 
-      y_hat, cache = self.feed_forward(A0)  # Feed forward (outputting prediction y_hat and intermediate layers A)
+      y_hat, cache = self.feed_forward(A0) # Feed forward (outputting prediction y_hat and intermediate layers A)
 
-      error = self.cost(y_hat, Y)  # Calculating cost for each epoch (compares y_hat with Y)
-      costs.append(error)  # Appending these individual costs to the empty list
+      error = self.cost(y_hat, Y) # Calculating cost for each epoch (compares y_hat with Y)
+      costs.append(error) # Appending these individual costs to the empty list
 
-      grads = {}  # Creating empty dictionary for gradients
-      propagator = None  # Starts as none as no layer after L (therefore no inherited propogator)
+      grads = {} # Creating empty dictionary for gradients
+      propagator = None # Starts as none as no layer after L (therefore no inherited propogator)
 
-      for l in range(self.L, 0, -1):  # Looping backwards from L -> 1
-        dC_dW, dC_db, propagator = self.backprop_layer(  # Calculating gradients (PDs) of that layer
+      for l in range(self.L, 0, -1): # Looping backwards from L -> 1
+        dC_dW, dC_db, propagator = self.backprop_layer( # Calculating gradients (PDs) of that layer
             l, cache, m, Y=Y, propagator_dC_dA=propagator
         )
-        grads[f"W{l}"] = dC_dW  # Weight gradients added to dictionary
-        grads[f"b{l}"] = dC_db  # Bias gradients added to dictionary
+        grads[f"W{l}"] = dC_dW # Weight gradients added to dictionary
+        grads[f"b{l}"] = dC_db # Bias gradients added to dictionary
 
-      for l in range(1, self.L + 1):  # Looping from 1 -> L
-        self.params[f"W{l}"] = self.params[f"W{l}"] - (alpha * grads[f"W{l}"])  # Weights updated using weight gradients of resp layers
-        self.params[f"b{l}"] = self.params[f"b{l}"] - (alpha * grads[f"b{l}"])  # Biases updated using bias gradients of resp layers
+      for l in range(1, self.L + 1): # Looping from 1 -> L
+        self.params[f"W{l}"] = self.params[f"W{l}"] - (alpha * grads[f"W{l}"]) # Weights updated using weight gradients of resp layers
+        self.params[f"b{l}"] = self.params[f"b{l}"] - (alpha * grads[f"b{l}"]) # Biases updated using bias gradients of resp layers
 
-      if e % 20 == 0:  # Every 20 epochs, print the current cost
+      if e % 20 == 0: # Every 20 epochs, print the current cost
         print(f"epoch {e}: cost = {error:4f}")
 
     return costs
 
   def plot_cost(self, costs):
-    # Plots cost vs iterations -- same matplotlib lines from the bottom of nn_variable.py, as a one-liner
-    import matplotlib.pyplot as plt  # Imported lazily so importing network alone doesn't require matplotlib
+    # Plots cost vs iterations
+    import matplotlib.pyplot as plt # Imported lazily so importing network alone doesn't require matplotlib
 
     plt.plot(range(len(costs)), costs)
     plt.xlabel("Iterations")
@@ -242,10 +245,6 @@ class NeuralNetworkBinary:
     plt.show()
 
   def gradient_check(self, A0, Y, m, epsilon=1e-7, tolerance=1e-7, num_checks=None, verbose=True):
-    # See GradientCheck.explain() for what this does and why.
-    # Nudges each parameter by +-epsilon, sees how much the cost actually moves, and compares
-    # that to what backprop claims the gradient is -- if they agree, backprop is very likely correct.
-    # num_checks: check every parameter by default, or pass a number to randomly sample that many instead (faster on a large network)
 
     # 1. One real forward + backward pass, to get the analytical gradients
     y_hat, cache = self.feed_forward(A0)
@@ -292,7 +291,7 @@ class NeuralNetworkBinary:
 
       numerical[idx] = (cost_plus - cost_minus) / (2 * epsilon)
 
-      flat[i] = original_value  # restore — gradient_check must not leave params changed
+      flat[i] = original_value # Restore - gradient_check must not leave params changed
       self.params[k] = flat.reshape(original_shape)
 
     # 4. Compare the two gradient vectors as one relative difference
@@ -303,7 +302,7 @@ class NeuralNetworkBinary:
 
     if verbose:
       status = "PASSED" if passed else "FAILED"
-      print(f"Gradient check {status} — checked {len(positions)}/{len(all_positions)} "
+      print(f"Gradient check {status} - checked {len(positions)}/{len(all_positions)} "
             f"parameters, relative difference: {relative_difference:.2e} "
             f"(tolerance: {tolerance:.0e})")
 

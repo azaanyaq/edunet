@@ -55,10 +55,18 @@ silently distort every prediction. Always call `prepare_data()` on your
 
 ### `NeuralNetworkBinary(n, hidden_activation=Sigmoid, output_activation=Sigmoid, cost_fn=BinaryCrossEntropy)`
 
-Builds the network and randomly initializes every weight matrix (`W1..WL`)
-and bias vector (`b1..bL`). Every component is swappable — see
+Builds the network and randomly initializes every weight matrix (`W1..WL`);
+bias vectors (`b1..bL`) start at zero. Every component is swappable — see
 [Activation functions](#activation-functions) and
 [Cost functions](#cost-functions) below for what's available.
+
+Weights are scaled by **fan-in** — `sqrt(2 / n[l-1])` for a ReLU layer (He
+initialization), `sqrt(1 / n[l-1])` otherwise (Xavier). A neuron sums
+`fan_in` terms, so unscaled random weights make the pre-activation `Z` grow
+like `sqrt(fan_in)`: harmless with 2 input features, but with 30 it starts
+the output sigmoid pinned at exactly 1.0 or 0.0 and `BinaryCrossEntropy`
+immediately hits `log(0)`. The scaling cancels that growth, so `Z` starts
+around 1 regardless of how wide the layer is.
 
 Raises `ValueError` immediately if `n` is invalid: fewer than 2 entries,
 a non-positive or non-integer layer size, or `n[-1] != 1`.

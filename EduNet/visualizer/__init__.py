@@ -8,7 +8,7 @@ def demo_vis(architecture, epochs, alpha, seed=None,
              hidden_activation=Sigmoid, output_activation=Sigmoid, cost_fn=BinaryCrossEntropy):
   """
   Trains a NeuralNetworkBinary on a built-in preset dataset and opens the
-  interactive visualizer window — click the dataset buttons in the GUI to
+  interactive visualizer window - click the dataset buttons in the GUI to
   retrain live on a different preset (Blobs/XOR/Circles/Moons).
 
   architecture, epochs, alpha, seed: same meaning as NeuralNetworkBinary /

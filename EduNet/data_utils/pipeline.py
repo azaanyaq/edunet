@@ -20,7 +20,7 @@ def handle_missing(df, strategy="drop"):
     all_nan_cols = [c for c in numeric_cols if df[c].isna().all()]
     if all_nan_cols:
       raise ValueError(
-          f"column(s) {all_nan_cols} are entirely missing — there's no "
+          f"column(s) {all_nan_cols} are entirely missing - there's no "
           f"data to compute a mean from. Drop the column(s) first, or use "
           f"strategy='drop'."
       )
@@ -32,14 +32,14 @@ def handle_missing(df, strategy="drop"):
 
 def encode_categorical(df, columns=None):
   """One-hot encodes categorical columns (auto-detected via dtype if
-  columns=None). Every category becomes its own 0/1 column — no
+  columns=None). Every category becomes its own 0/1 column - no
   drop_first, since multicollinearity isn't the concern for a neural
   net that it would be for linear regression."""
   if columns is None:
     columns = df.select_dtypes(include=["object", "category"]).columns.tolist()
   nan_cols = [c for c in columns if df[c].isna().any()]
   if nan_cols:
-    print(f"encode_categorical(): column(s) {nan_cols} have missing values — "
+    print(f"encode_categorical(): column(s) {nan_cols} have missing values - "
           f"those rows will be encoded as 0 across every dummy column for "
           f"that feature (indistinguishable from a real row), since "
           f"get_dummies() drops NaN as a category by default. Call "
@@ -59,16 +59,16 @@ def load_dataset(path_or_url, target_column, positive_label=None,
   e.g. an ID column. Without this, a text identifier column (unique per
   row) gets auto-detected as "categorical" the same as a genuine category
   and one-hot encoded into one column per row, which is never what you
-  want — pass it here instead of feeding it to the network.
+  want - pass it here instead of feeding it to the network.
 
   positive_label: which target value becomes 1. If the target isn't
   already 0/1 and this is omitted, the mapping is inferred (alphabetical)
-  and printed — never silently guessed without telling you.
+  and printed - never silently guessed without telling you.
   """
   df = load_csv(path_or_url)
   if drop_columns:
     df = df.drop(columns=list(drop_columns))
-  # A missing target value has no valid label to fill in with -- mean-
+  # A missing target value has no valid label to fill in with - mean-
   # imputing it (missing_strategy="mean") would fabricate a fractional
   # "class" that's never a real label, silently corrupting that row. Drop
   # rows with a missing target before handle_missing() runs on the rest of
@@ -83,7 +83,7 @@ def load_dataset(path_or_url, target_column, positive_label=None,
   unique_vals = sorted(y_raw.unique(), key=str)
   if len(unique_vals) != 2:
     raise ValueError(f"target column {target_column!r} has {len(unique_vals)} unique "
-                      f"values {unique_vals} — NeuralNetworkBinary only supports binary "
+                      f"values {unique_vals} - NeuralNetworkBinary only supports binary "
                       f"classification (exactly 2)")
   if positive_label is not None:
     if positive_label not in unique_vals:
@@ -92,7 +92,7 @@ def load_dataset(path_or_url, target_column, positive_label=None,
     pos_val = positive_label
   else:
     neg_val, pos_val = unique_vals
-    if set(unique_vals) != {0, 1}:  # already-clean binary targets don't need an announced mapping
+    if set(unique_vals) != {0, 1}: # Already-clean binary targets don't need an announced mapping
       print(f"Target mapping (pass positive_label=... to control this): {neg_val!r} -> 0, {pos_val!r} -> 1")
 
   y = (y_raw == pos_val).astype(int).values

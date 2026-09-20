@@ -24,7 +24,7 @@ class BinaryCrossEntropy(Explainable):
     # 1. Losses is a n^L x m matrix
     losses = -((y * np.log(y_hat)) + (1 - y) * np.log(1 - y_hat))
 
-    m = y_hat.size  # Calculates total number of predictions that make up y_hat
+    m = y_hat.size # Calculates total number of predictions that make up y_hat
 
     # 2. Summing across axis = 1 means we sum across rows, making this a n^L x 1 matrix
     summed_losses = (1 / m) * np.sum(losses, axis=1)

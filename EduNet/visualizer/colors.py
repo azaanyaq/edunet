@@ -5,10 +5,10 @@ from matplotlib.colors import LinearSegmentedColormap
 
 NODE_FWD_LOW, NODE_FWD_HIGH = (8, 8, 8), (255, 255, 255)
 
-W_POS, W_NEG = (50, 150, 255), (255, 40, 40) # weight sign: blue / red
-G_POS, G_NEG = (80, 230, 120), (185, 90, 230) # gradient sign: green / purple
+W_POS, W_NEG = (50, 150, 255), (255, 40, 40) # Weight sign: blue / red
+G_POS, G_NEG = (80, 230, 120), (185, 90, 230) # Gradient sign: green / purple
 
-# Decision-boundary heatmap uses its own separate blue scale — unrelated to
+# Decision-boundary heatmap uses its own separate blue scale - unrelated to
 # the node-diagram colors above (that panel isn't the "network skeleton").
 HEATMAP_LOW, HEATMAP_HIGH = (30, 35, 50), (79, 163, 255)
 
@@ -28,18 +28,18 @@ def forward_node_color(v, layer_min, layer_max):
   # Sigmoid naturally sits near [0,1], but ReLU/Tanh/Identity don't, so a
   # fixed assumption would saturate everything to solid white or black.
   span = layer_max - layer_min
-  t = 0.5 if span <= 1e-12 else (v - layer_min) / span  # flat layer (e.g. a dead ReLU) -> neutral mid-gray
+  t = 0.5 if span <= 1e-12 else (v - layer_min) / span # Flat layer (e.g. a dead ReLU) -> neutral mid-gray
   return mix(NODE_FWD_LOW, NODE_FWD_HIGH, t)
 
 
 def input_node_color(v):
-  t = 1 / (1 + np.exp(-v))  # squash raw standardized feature purely for display
+  t = 1 / (1 + np.exp(-v)) # Squash raw standardized feature purely for display
   return mix(NODE_FWD_LOW, NODE_FWD_HIGH, t)
 
 
 def _exaggerate(t):
   # Pushes mid-low magnitudes up so more edges read as vividly colored
-  # rather than washed out — an intentional exaggeration, not a literal
+  # rather than washed out - an intentional exaggeration, not a literal
   # linear magnitude scale.
   return clamp01(t) ** 0.6
 
@@ -52,7 +52,7 @@ def weight_edge_style(w, max_abs):
 
 def grad_node_color(v, max_abs):
   t = _exaggerate(abs(v) / max_abs if max_abs > 0 else 0)
-  return mix(NODE_FWD_LOW, NODE_FWD_HIGH, t)  # grayscale, same as forward view
+  return mix(NODE_FWD_LOW, NODE_FWD_HIGH, t) # Grayscale, same as forward view
 
 
 def grad_edge_style(g, max_abs):

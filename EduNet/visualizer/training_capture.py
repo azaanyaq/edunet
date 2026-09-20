@@ -8,11 +8,11 @@ from .app import _launch_visualizer
 def train_and_capture(n, X, y, epochs, alpha, seed=None,
                        hidden_activation=Sigmoid, output_activation=Sigmoid, cost_fn=BinaryCrossEntropy,
                        grid_res=40, grid_pad=1.0):
-  np.random.seed(seed)  # np.random.seed(None) re-seeds from OS entropy - a valid "unseeded" run
+  np.random.seed(seed) # Np.random.seed(None) re-seeds from OS entropy - a valid "unseeded" run
   net = NeuralNetworkBinary(n, hidden_activation, output_activation, cost_fn)
-  A0, Y, m = net.prepare_data(X, y)  # also captures net.X_mean/net.X_std, used by predict_grid below
+  A0, Y, m = net.prepare_data(X, y) # Also captures net.X_mean/net.X_std, used by predict_grid below
 
-  # The heatmap/contour view is a 2D grid technique -- it has no meaning for
+  # The heatmap/contour view is a 2D grid technique - it has no meaning for
   # a network with more than 2 input features. Skip building the grid (and
   # every predict_grid() call below) entirely rather than crashing on
   # predict_grid()'s hardcoded 2-column grid_raw; _launch_visualizer shows
@@ -28,15 +28,15 @@ def train_and_capture(n, X, y, epochs, alpha, seed=None,
     y_hat, cache = net.feed_forward(A0)
     error = net.cost(y_hat, Y)
 
-    grads = {}   # keys "W{l}"/"b{l}" — used below to actually update net.params
-    dWs = {}     # keys "dW{l}" — just the weight gradients, for the snapshot
-    dZs = {}     # keys "dZ{l}"
+    grads = {} # Keys "W{l}"/"b{l}" - used below to actually update net.params
+    dWs = {} # Keys "dW{l}" - just the weight gradients, for the snapshot
+    dZs = {} # Keys "dZ{l}"
     propagator = None
     for l in range(net.L, 0, -1):
       A_l = cache[f"A{l}"]
       # backprop_layer doesn't return dZ (its public signature can't change —
       # train()/gradient_check()/every example script depend on the current
-      # 3-value return) — recompute it here with the same formula it uses
+      # 3-value return) - recompute it here with the same formula it uses
       # internally, so we can capture it for the backward-view coloring.
       if l == net.L:
         dZ = net.cost_fn.backward(A_l, Y, m) * net.output_activation.backward(A_l)
@@ -53,7 +53,7 @@ def train_and_capture(n, X, y, epochs, alpha, seed=None,
       net.params[f"W{l}"] -= alpha * grads[f"W{l}"]
       net.params[f"b{l}"] -= alpha * grads[f"b{l}"]
 
-    boundary = net.predict_grid(grid_x, grid_y) if supports_2d_view else None  # uses weights AFTER this step's update
+    boundary = net.predict_grid(grid_x, grid_y) if supports_2d_view else None # Uses weights AFTER this step's update
     snapshots.append({
         "epoch": e,
         "cost": error,
@@ -64,7 +64,7 @@ def train_and_capture(n, X, y, epochs, alpha, seed=None,
         "boundary": boundary,
     })
   if not snapshots:
-    raise RuntimeError("train_and_capture() got epochs=0 — nothing to visualize, pass epochs >= 1")
+    raise RuntimeError("train_and_capture() got epochs=0 - nothing to visualize, pass epochs >= 1")
   print(f"  final cost: {snapshots[-1]['cost']:.4f}")
 
   return {
@@ -82,7 +82,7 @@ class TrainingRecorder:
   of letting visualize() own training end to end. Call .capture(...) once
   per epoch, right after you update net.params, then .show() when done.
 
-  capture_every: only record every Nth epoch instead of all of them — the
+  capture_every: only record every Nth epoch instead of all of them - the
   expensive part of a capture is predict_grid (one extra forward pass over
   a grid_res x grid_res grid), so this is the direct lever if capturing
   every single epoch is too slow for your architecture/epoch count.
@@ -93,7 +93,7 @@ class TrainingRecorder:
       raise ValueError(f"capture_every must be >= 1 (1 = capture every epoch), got {capture_every}")
     self.net, self.X, self.Y, self.m = net, X, Y, m
     self.capture_every = capture_every
-    # The heatmap/contour view is a 2D grid technique -- meaningless for a
+    # The heatmap/contour view is a 2D grid technique - meaningless for a
     # network with more than 2 input features. Skip building the grid (and
     # every predict_grid() call in capture()) entirely rather than crashing
     # on predict_grid()'s hardcoded 2-column grid; _launch_visualizer shows
@@ -104,7 +104,7 @@ class TrainingRecorder:
     )
     self.snapshots = []
     self._epoch = 0
-    # Weights as they were BEFORE the caller's next params update -- i.e.
+    # Weights as they were BEFORE the caller's next params update - i.e.
     # the weights that actually produced whatever cache/grads capture() is
     # about to be handed. Documented usage calls capture() AFTER the
     # caller's own params-update loop, so net.params is already one step
@@ -119,8 +119,8 @@ class TrainingRecorder:
     if self._epoch % self.capture_every == 0:
       net, Y, m, L = self.net, self.Y, self.m, self.net.L
       # backprop_layer doesn't return dZ (its public signature can't
-      # change — train()/gradient_check()/every example script depend on
-      # the current 3-value return) — recompute it here the same way
+      # change - train()/gradient_check()/every example script depend on
+      # the current 3-value return) - recompute it here the same way
       # train_and_capture does, using the caller's own cache/grads.
       dZs, propagator = {}, None
       for l in range(L, 0, -1):
@@ -150,7 +150,7 @@ class TrainingRecorder:
     those only apply to demo_vis()'s built-in presets, not a dataset you supplied
     yourself."""
     if not self.snapshots:
-      raise RuntimeError("no snapshots captured — call .capture(...) at least once before .show()")
+      raise RuntimeError("no snapshots captured - call .capture(...) at least once before .show()")
     data = {
         "n": self.net.n, "L": self.net.L,
         "X_raw": self.X, "X_std": self._X_std_from_net(), "y": self.Y.ravel(),

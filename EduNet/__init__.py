@@ -1,5 +1,5 @@
 """
-EduNet — a small, from-scratch neural network library built for learning:
+EduNet - a small, from-scratch neural network library built for learning:
 every activation, cost function, and diagnostic is written out in the
 open, so you can read (and swap) every piece.
 """
@@ -16,7 +16,7 @@ from .network import (
     GradientCheck,
 )
 
-# Controls exactly what `from EduNet import *` pulls in — without this,
+# Controls exactly what `from EduNet import *` pulls in - without this,
 # it would also leak network's own imports (numpy, textwrap) into the
 # caller's namespace.
 __all__ = [
@@ -43,7 +43,7 @@ __all__ = [
 
 # name -> which submodule actually defines it, imported lazily on first
 # access. Keeps `import EduNet` (and anything using just
-# NeuralNetworkBinary) free of a hard matplotlib/pandas dependency — each
+# NeuralNetworkBinary) free of a hard matplotlib/pandas dependency - each
 # submodule is only imported the moment one of its own names is touched.
 _LAZY_MODULES = {
     "demo_vis": "visualizer",

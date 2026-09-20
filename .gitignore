@@ -26,3 +26,7 @@ env/
 
 # Claude Code project instructions (local-only)
 CLAUDE.md
+
+# Local-only scratch: ad hoc test script and its cached dataset download
+testing.py
+wdbc.csv

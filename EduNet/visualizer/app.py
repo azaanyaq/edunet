@@ -34,7 +34,7 @@ def build_diagram(ax, n):
   ax.cla()
   ax.set_xlim(0, 10)
   ax.set_ylim(0, 10)
-  ax.set_aspect("equal")  # so Circle patches render as actual circles, not ovals
+  ax.set_aspect("equal") # So Circle patches render as actual circles, not ovals
   ax.set_xticks([])
   ax.set_yticks([])
   for spine in ax.spines.values():
@@ -43,7 +43,7 @@ def build_diagram(ax, n):
   L = len(n) - 1
   positions = build_node_positions(n)
 
-  edge_lines = [None]  # edge_lines[l] = edges INTO layer l (l = 1..L)
+  edge_lines = [None] # Edge_lines[l] = edges INTO layer l (l = 1....L)
   for l in range(1, L + 1):
     layer_edges = []
     for i in range(n[l]):
@@ -72,10 +72,10 @@ def build_diagram(ax, n):
 
 # Everything below is internal machinery for visualize() and isn't meant
 # to be called directly. It's wrapped in one function so nothing here
-# executes at import time — only when visualize() calls it with trained data.
+# executes at import time - only when visualize() calls it with trained data.
 
 def _launch_visualizer(data, presets=None, train_kwargs=None, active_label=None):
-  # presets/train_kwargs/active_label: only passed by demo_vis() -- enables the in-GUI
+  # presets/train_kwargs/active_label: only passed by demo_vis() - enables the in-GUI
   # dataset-switcher button row + live retrain. TrainingRecorder.show() passes neither
   # (it's showing one already-completed manual run, with no dataset to switch to), so
   # presets stays None and the button row simply doesn't get built.
@@ -96,7 +96,7 @@ def _launch_visualizer(data, presets=None, train_kwargs=None, active_label=None)
       "selected": 0,
       "playing": False,
       "boundary_mode": "heatmap", # "heatmap" or "contour"
-      "speed": 1.0, # multiplier on playback speed, 0.1x - 5x
+      "speed": 1.0, # Multiplier on playback speed, 0.1x - 5x
       "active_dataset": active_label, # None when presets is None (TrainingRecorder path)
   }
   diagram = {}
@@ -135,7 +135,7 @@ def _launch_visualizer(data, presets=None, train_kwargs=None, active_label=None)
     ax_scatter.cla()
 
     if not data["supports_2d_view"]:
-      # Heatmap/contour is a 2D grid technique -- nothing meaningful to plot
+      # Heatmap/contour is a 2D grid technique - nothing meaningful to plot
       # for a network with more than 2 input features. Leave the panel
       # blank with an explanation instead of attempting a misleading
       # 2-of-N-column projection.
@@ -166,7 +166,7 @@ def _launch_visualizer(data, presets=None, train_kwargs=None, active_label=None)
     ax_scatter.set_xlim(extent[0], extent[1])
     ax_scatter.set_ylim(extent[2], extent[3])
 
-    # X_raw, not X_std — extent/xlim/ylim above are in raw coordinate space
+    # X_raw, not X_std - extent/xlim/ylim above are in raw coordinate space
     # (matching grid_x/grid_y, which predict_grid also expects in raw
     # units), so the scatter has to plot in that same space to line up.
     X_raw, y = data["X_raw"], data["y"]
@@ -184,7 +184,7 @@ def _launch_visualizer(data, presets=None, train_kwargs=None, active_label=None)
     # make_grid_axes() deliberately stays anchored to the bulk of the data
     # (rejecting statistical outliers via median/MAD, not true min/max) so
     # 1-2 far outliers can't blow the whole view out and hide the real
-    # decision-boundary detail -- but that means a genuine outlier can
+    # decision-boundary detail - but that means a genuine outlier can
     # render outside the visible grid entirely. Surface that instead of
     # silently dropping the point off-screen.
     outside = ((X_raw[:, 0] < extent[0]) | (X_raw[:, 0] > extent[1]) |
@@ -218,7 +218,7 @@ def _launch_visualizer(data, presets=None, train_kwargs=None, active_label=None)
                  family="monospace", fontsize=10, color="#e0e0e0")
 
     # Selected-sample block (fixed fact about the data, doesn't change with
-    # epoch) — right column, same row height as the block above (both
+    # epoch) - right column, same row height as the block above (both
     # anchored at y=1.0), colored to match the sample's true-label color
     # used everywhere else for visual distinction instead of a header.
     sample_text = (f"POINT    ({raw[0]:.2f}, {raw[1]:.2f})\n"
@@ -244,21 +244,21 @@ def _launch_visualizer(data, presets=None, train_kwargs=None, active_label=None)
       y -= 0.15
 
   def build_cost_curve():
-    # The curve itself is static (drawn once, here) — only the "you are
+    # The curve itself is static (drawn once, here) - only the "you are
     # here" marker moves, updated every render() from update_cost_marker().
     ax_cost.cla()
     epochs = [s["epoch"] for s in data["snapshots"]]
     costs = [s["cost"] for s in data["snapshots"]]
     ax_cost.plot(epochs, costs, color="#e0e0e0", linewidth=1)
 
-    x_pad = (epochs[-1] - epochs[0]) * 0.05 or 0.5  # single-snapshot run (epochs[0] == epochs[-1]) still gets visible padding
+    x_pad = (epochs[-1] - epochs[0]) * 0.05 or 0.5 # Single-snapshot run (epochs[0] == epochs[-1]) still gets visible padding
     ax_cost.set_xlim(epochs[0] - x_pad, epochs[-1] + x_pad)
     finite_costs = [c for c in costs if np.isfinite(c)]
     if finite_costs:
       cost_min, cost_max = min(finite_costs), max(finite_costs)
-      pad = (cost_max - cost_min) * 0.1 or 0.05  # flat curve (e.g. 1-snapshot run) still gets visible padding
+      pad = (cost_max - cost_min) * 0.1 or 0.05 # Flat curve (e.g. 1-snapshot run) still gets visible padding
       ax_cost.set_ylim(cost_min - pad, cost_max + pad)
-    # else: every cost is NaN/Inf (e.g. diverging training) -- leave ylim on
+    # else: every cost is NaN/Inf (e.g. diverging training) - leave ylim on
     # matplotlib's own autoscale rather than crashing on set_ylim(nan, nan)
 
     ax_cost.tick_params(labelsize=7, colors="#888888")
@@ -302,7 +302,7 @@ def _launch_visualizer(data, presets=None, train_kwargs=None, active_label=None)
     fig.canvas.flush_events()
 
   def render_transition_frame(next_snap, phase):
-    # Only touches the network diagram (ax_net) — used for the brief forward/
+    # Only touches the network diagram (ax_net) - used for the brief forward/
     # backward flashes during Play. The scatter/boundary/info panel only ever
     # update on settle (render()), so they don't flicker mid-transition.
     n, L = data["n"], data["L"]
@@ -373,16 +373,16 @@ def _launch_visualizer(data, presets=None, train_kwargs=None, active_label=None)
   def restyle_dataset_buttons():
     for lbl, btn in widgets["dataset_buttons"].items():
       btn.color = DATASET_ACTIVE_COLOR if lbl == state["active_dataset"] else DATASET_INACTIVE_COLOR
-      btn.ax.patch.set_facecolor(btn.color)  # Button only repaints its own patch on hover -- set both
+      btn.ax.patch.set_facecolor(btn.color) # Button only repaints its own patch on hover - set both
 
   def switch_dataset(label):
     if label == state["active_dataset"]:
-      return  # already showing this dataset -- avoid a pointless retrain
+      return # Already showing this dataset - avoid a pointless retrain
 
     state["playing"] = False
     widgets["play_button"].label.set_text("Play")
 
-    # Retraining is a blocking numpy loop -- paint a status message before the freeze so it isn't silent
+    # Retraining is a blocking numpy loop - paint a status message before the freeze so it isn't silent
     ax_info.cla()
     ax_info.axis("off")
     ax_info.text(0.5, 0.5, f"Training on {label}...", transform=ax_info.transAxes,
@@ -390,7 +390,7 @@ def _launch_visualizer(data, presets=None, train_kwargs=None, active_label=None)
     fig.canvas.draw()
     fig.canvas.flush_events()
 
-    from .training_capture import train_and_capture  # local import -- avoids a circular import with training_capture.py, which imports _launch_visualizer from this module
+    from .training_capture import train_and_capture # Local import - avoids a circular import with training_capture.py, which imports _launch_visualizer from this module
 
     dataset_fn = dict(presets)[label]
     X, y = dataset_fn()
@@ -409,7 +409,7 @@ def _launch_visualizer(data, presets=None, train_kwargs=None, active_label=None)
     state["selected"] = 0
     state["active_dataset"] = label
 
-    if data["n"] != old_n:  # defensive only -- never triggers with today's all-2-feature presets
+    if data["n"] != old_n: # Defensive only - never triggers with today's all-2-feature presets
       diagram["node_patches"], diagram["edge_lines"] = build_diagram(ax_net, data["n"])
 
     build_cost_curve()
@@ -424,8 +424,8 @@ def _launch_visualizer(data, presets=None, train_kwargs=None, active_label=None)
     if event.inaxes != ax_scatter:
       return
     if not data["supports_2d_view"]:
-      return  # panel is just an explanatory message -- nothing plotted to select
-    pts = data["X_raw"]  # ax_scatter is displayed in raw coordinate space — see update_scatter_and_boundary
+      return # Panel is just an explanatory message - nothing plotted to select
+    pts = data["X_raw"] # Ax_scatter is displayed in raw coordinate space - see update_scatter_and_boundary
     dists = np.hypot(pts[:, 0] - event.xdata, pts[:, 1] - event.ydata)
     state["selected"] = int(np.argmin(dists))
     render()
@@ -499,7 +499,7 @@ def _launch_visualizer(data, presets=None, train_kwargs=None, active_label=None)
       btn = Button(ax, label, color=DATASET_INACTIVE_COLOR, hovercolor="#35406a")
       btn.label.set_color("#e0e0e0")
       btn.label.set_fontsize(9)
-      btn.on_clicked(lambda event, lbl=label: switch_dataset(lbl))  # default-arg capture avoids late binding
+      btn.on_clicked(lambda event, lbl=label: switch_dataset(lbl)) # Default-arg capture avoids late binding
       widgets["dataset_buttons"][label] = btn
     restyle_dataset_buttons()
 
@@ -510,10 +510,10 @@ def _launch_visualizer(data, presets=None, train_kwargs=None, active_label=None)
   try:
     fig.canvas.manager.window.resizable(False, False)
   except Exception:
-    pass  # non-Tk backend (e.g. TkAgg failed to load earlier) — not critical
+    pass # Non-Tk backend (e.g. TkAgg failed to load earlier) - not critical
 
-  plt.show()  # blocks until the window closes in real interactive use
+  plt.show() # Blocks until the window closes in real interactive use
 
-  # Only reached in headless testing (plt.show monkeypatched to a no-op) -- lets a
+  # Only reached in headless testing (plt.show monkeypatched to a no-op) - lets a
   # test script drive switch_dataset()/state/widgets without a real display.
   return {"fig": fig, "state": state, "data": data, "switch_dataset": switch_dataset, "widgets": widgets}
